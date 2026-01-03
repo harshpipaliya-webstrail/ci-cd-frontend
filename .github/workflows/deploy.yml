@@ -11,79 +11,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup SSH
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
-      # 3️⃣ Deploy frontend via SSH (no .sh file needed)
       - name: Deploy frontend to EC2
         run: |
           BRANCH="${GITHUB_REF##*/}"
           echo "🚀 Deploying frontend for $BRANCH"
 
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} bash -s <<EOF
-            set -e
+          ssh -o StrictHostKeyChecking=no \
+            ubuntu@${{ secrets.EC2_HOST }} \
+            "/home/ubuntu/projects/ci-cd-frontend/deploy.sh $BRANCH"
 
-            ENV="$BRANCH"
-            echo "🚀 Frontend deployment started for $ENV"
-
-            # -------- CONFIG --------
-            FRONTEND_DIR="/home/ubuntu/projects/ci-cd-frontend/ci-cd-frontend"
-
-            if [ "$ENV" = "staging" ]; then
-              TARGET_DIR="/var/www/projects/cicd/stage"
-              ENV_FILE="/home/ubuntu/projects/ci-cd-frontend/envs/.env.staging"
-            elif [ "$ENV" = "production" ]; then
-              TARGET_DIR="/var/www/projects/cicd/prod"
-              ENV_FILE="/home/ubuntu/projects/ci-cd-frontend/envs/.env.production"
-            else
-              echo "❌ Invalid environment"
-              exit 1
-            fi
-
-            # Create target folder if it doesn’t exist
-            mkdir -p "$TARGET_DIR"
-
-            # -------- LOAD NVM --------
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            nvm use --lts --silent
-
-            # -------- DEPLOY --------
-            cd "$FRONTEND_DIR"
-
-            echo "📥 Pulling latest code"
-            git fetch origin
-            git checkout "$ENV"
-            git pull origin "$ENV"
-
-            echo "📄 Applying env file"
-            cp "$ENV_FILE" .env
-
-            echo "📦 Installing dependencies"
-            npm install
-
-            echo "🏗️ Building frontend"
-            npm run build
-
-            echo "🧹 Cleaning old build in target folder"
-            rm -rf "${TARGET_DIR:?}"/*
-
-            echo "📁 Copying new build"
-            cp -r dist/* "$TARGET_DIR/"
-
-            echo "🧹 Cleaning local node_modules and dist folder"
-            rm -rf node_modules dist
-
-            echo "✅ Frontend deployed successfully for $ENV"
-          EOF
-
-      # 4️⃣ Done
       - name: Done
         run: echo "✅ Frontend deployment completed"
