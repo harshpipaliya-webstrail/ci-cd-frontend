@@ -27,7 +27,7 @@ jobs:
           BRANCH="${GITHUB_REF##*/}"
           echo "🚀 Deploying frontend for $BRANCH"
 
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} bash -s <<'EOF'
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} bash -s <<EOF
             set -e
 
             ENV="$BRANCH"
