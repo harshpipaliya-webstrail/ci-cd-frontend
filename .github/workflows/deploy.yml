@@ -1,0 +1,32 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - staging
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Deploy frontend to EC2
+        run: |
+          BRANCH="${GITHUB_REF##*/}"
+          echo "🚀 Deploying frontend for $BRANCH"
+
+          ssh -o StrictHostKeyChecking=no \
+            ubuntu@${{ secrets.EC2_HOST }} \
+            "/home/ubuntu/projects/ci-cd-frontend/deploy.sh $BRANCH"
+
+      - name: Done
+        run: echo "✅ Frontend deployment completed"
