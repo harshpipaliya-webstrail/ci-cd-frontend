@@ -82,6 +82,7 @@ jobs:
             rm -rf node_modules dist
 
             echo "✅ Frontend deployed successfully for $ENV"
+          EOF
 
       # 4️⃣ Done
       - name: Done
